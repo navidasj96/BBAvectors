@@ -1,7 +1,7 @@
 import os
 import torch
 import numpy as np
-from datasets.DOTA_devkit.ResultMerge_multi_process import py_cpu_nms_poly_fast, py_cpu_nms_poly
+from datasets.dotadevkit.dotadevkit.ops.ResultMerge import py_cpu_nms_poly_fast, py_cpu_nms_poly
 
 
 def decode_prediction(predictions, dsets, args, img_id, down_ratio):
