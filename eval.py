@@ -1,7 +1,7 @@
 import torch
 import os
 import func_utils
-
+from datasets.dotadevkit.dotadevkit.cli import merge
 
 class EvalModule(object):
     def __init__(self, dataset, num_classes, model, decoder):
@@ -50,7 +50,7 @@ class EvalModule(object):
             merge_path = 'merge_'+args.dataset
             if not os.path.exists(merge_path):
                 os.mkdir(merge_path)
-            dsets.merge_crop_image_results(result_path, merge_path)
+            merge(result_path, merge_path)
             return None
         else:
             ap = dsets.dec_evaluation(result_path)
