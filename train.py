@@ -6,6 +6,64 @@ import loss
 import cv2
 import func_utils
 
+from tqdm import tqdm
+
+import argparse
+import eval
+from datasets.dataset_dota import DOTA
+from datasets.dataset_hrsc import HRSC
+from models import ctrbox_net
+import decoder
+import os
+
+from datasets.dotadevkit.dotadevkit.evaluate import task1
+
+def parse_args():
+        parser = argparse.ArgumentParser(description='BBAVectors Implementation')
+        parser.add_argument('--num_epoch', type=int, default=1, help='Number of epochs')
+        parser.add_argument('--batch_size', type=int, default=1, help='Number of batch size')
+        parser.add_argument('--num_workers', type=int, default=4, help='Number of workers')
+        parser.add_argument('--init_lr', type=float, default=1.25e-4, help='Initial learning rate')
+        parser.add_argument('--input_h', type=int, default=800, help='Resized image height')
+        parser.add_argument('--input_w', type=int, default=800, help='Resized image width')
+        parser.add_argument('--K', type=int, default=500, help='Maximum of objects')
+        parser.add_argument('--conf_thresh', type=float, default=0.18, help='Confidence threshold, 0.1 for general evaluation')
+        parser.add_argument('--ngpus', type=int, default=1, help='Number of gpus, ngpus>1 for multigpu')
+        parser.add_argument('--resume_train', type=str, default='', help='Weights resumed in training')
+        parser.add_argument('--resume', type=str, default='model_last.pth', help='Weights resumed in testing and evaluation')
+        parser.add_argument('--dataset', type=str, default='dota', help='Name of dataset')
+        parser.add_argument('--data_dir', type=str, default='../Datasets/dota', help='Data directory')
+        parser.add_argument('--phase', type=str, default='test', help='Phase choice= {train, test, eval}')
+        parser.add_argument('--wh_channels', type=int, default=8, help='Number of channels for the vectors (4x2)')
+        args = parser.parse_args()
+        return args
+def evaluate():
+  args = parse_args() 
+  dataset = {'dota': DOTA, 'hrsc': HRSC}                  
+  num_classes = {'dota': 2, 'hrsc': 1}
+  heads = {'hm': num_classes[args.dataset],
+    'wh': 10,
+    'reg': 2,
+    'cls_theta': 1
+    }
+  down_ratio = 4
+  model = ctrbox_net.CTRBOX(heads=heads,
+                            pretrained=True,
+                            down_ratio=down_ratio,
+                            final_kernel=1,
+                            head_conv=256)
+
+  # decoder = decoder.DecDecoder(K=args.K,
+  #                             conf_thresh=args.conf_thresh,
+  #                             num_classes=num_classes[args.dataset])                    
+  ctrbox_obj = eval.EvalModule(dataset=dataset, num_classes=num_classes, model=model, decoder=decoder.DecDecoder(K=args.K,
+                              conf_thresh=args.conf_thresh,
+                              num_classes=num_classes[args.dataset]))
+  ctrbox_obj.evaluation(args, down_ratio=down_ratio)
+  task1.evaluate_result()
+
+
+  
 
 def collater(data):
     out_data_dict = {}
@@ -41,6 +99,8 @@ class TrainModule(object):
             'optimizer_state_dict': optimizer.state_dict(),
             # 'loss': loss
         }, path)
+
+    
 
     def load_model(self, model, optimizer, resume, strict=True):
         checkpoint = torch.load(resume, map_location=lambda storage, loc: storage)
@@ -89,6 +149,7 @@ class TrainModule(object):
                                                                         self.optimizer, 
                                                                         args.resume_train, 
                                                                         strict=True)
+            start_epoch+=1
         # end 
 
         if not os.path.exists(save_path):
@@ -135,12 +196,24 @@ class TrainModule(object):
 
             np.savetxt(os.path.join(save_path, 'train_loss.txt'), train_loss, fmt='%.6f')
 
-            if epoch % 5 == 0 or epoch > 20:
+            if epoch % 5 == 0 or epoch >= 1:
                 self.save_model(os.path.join(save_path, 'model_{}.pth'.format(epoch)),
                                 epoch,
                                 self.model,
                                 self.optimizer)
 
+                self.save_model(os.path.join('/content/drive/MyDrive/VAID-OBB/OneClassWeightsAugmented', 'model_{}.pth'.format(epoch)),
+                                epoch,
+                                self.model,
+                                self.optimizer)
+                              
+
+                self.save_model(os.path.join(save_path, 'model_last.pth'),
+                            epoch,
+                            self.model,
+                            self.optimizer)
+
+            evaluate()
             if 'test' in self.dataset_phase[args.dataset] and epoch%5==0:
                 mAP = self.dec_eval(args, dsets['test'])
                 ap_list.append(mAP)
@@ -157,7 +230,7 @@ class TrainModule(object):
         else:
             self.model.eval()
         running_loss = 0.
-        for data_dict in data_loader:
+        for data_dict in tqdm(data_loader):
             for name in data_dict:
                 data_dict[name] = data_dict[name].to(device=self.device, non_blocking=True)
             if phase == 'train':
