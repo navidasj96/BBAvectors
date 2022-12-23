@@ -15,13 +15,13 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=1, help='Number of batch size')
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers')
     parser.add_argument('--init_lr', type=float, default=1.25e-4, help='Initial learning rate')
-    parser.add_argument('--input_h', type=int, default=608, help='Resized image height')
-    parser.add_argument('--input_w', type=int, default=608, help='Resized image width')
+    parser.add_argument('--input_h', type=int, default=800, help='Resized image height')
+    parser.add_argument('--input_w', type=int, default=800, help='Resized image width')
     parser.add_argument('--K', type=int, default=500, help='Maximum of objects')
     parser.add_argument('--conf_thresh', type=float, default=0.18, help='Confidence threshold, 0.1 for general evaluation')
     parser.add_argument('--ngpus', type=int, default=1, help='Number of gpus, ngpus>1 for multigpu')
     parser.add_argument('--resume_train', type=str, default='', help='Weights resumed in training')
-    parser.add_argument('--resume', type=str, default='model_50.pth', help='Weights resumed in testing and evaluation')
+    parser.add_argument('--resume', type=str, default='model_last.pth', help='Weights resumed in testing and evaluation')
     parser.add_argument('--dataset', type=str, default='dota', help='Name of dataset')
     parser.add_argument('--data_dir', type=str, default='../Datasets/dota', help='Data directory')
     parser.add_argument('--phase', type=str, default='test', help='Phase choice= {train, test, eval}')
@@ -32,7 +32,7 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     dataset = {'dota': DOTA, 'hrsc': HRSC}
-    num_classes = {'dota': 15, 'hrsc': 1}
+    num_classes = {'dota': 2, 'hrsc': 1}
     heads = {'hm': num_classes[args.dataset],
              'wh': 10,
              'reg': 2,
