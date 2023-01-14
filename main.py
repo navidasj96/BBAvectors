@@ -32,7 +32,7 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     dataset = {'dota': DOTA, 'hrsc': HRSC}
-    num_classes = {'dota': 1, 'hrsc': 1}
+    num_classes = {'dota': 15, 'hrsc': 1}
     heads = {'hm': num_classes[args.dataset],
              'wh': 10,
              'reg': 2,
