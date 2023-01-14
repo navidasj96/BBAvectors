@@ -3,7 +3,6 @@ import torch
 import numpy as np
 from datasets.dotadevkit.dotadevkit.ops.ResultMerge import py_cpu_nms_poly_fast, py_cpu_nms_poly
 
-
 def decode_prediction(predictions, dsets, args, img_id, down_ratio):
     predictions = predictions[0, :, :]
     ori_image = dsets.load_image(dsets.img_ids.index(img_id))
