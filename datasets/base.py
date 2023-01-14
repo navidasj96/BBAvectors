@@ -113,10 +113,10 @@ class BaseDataset(data.Dataset):
         image = np.asarray(np.clip(image, a_min=0., a_max=255.), np.float32)
         image = np.transpose(image / 255. - 0.5, (2, 0, 1))
 
-        image_h = 800 // 4
-        image_w = 800 // 4
+        image_h = 608 // 4
+        image_w = 608 // 4
 
-        hm = np.zeros((2, image_h, image_w), dtype=np.float32)
+        hm = np.zeros((15, image_h, image_w), dtype=np.float32)
         wh = np.zeros((500, 10), dtype=np.float32)
         ## add
         cls_theta = np.zeros((500, 1), dtype=np.float32)
